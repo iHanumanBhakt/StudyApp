@@ -141,7 +141,7 @@ YOUR RULES AND BEHAVIOR:
 3. Code-Writing Restriction: Do NOT write the final correct solution code for the student under any circumstances. You must act as a tutor—point out where their logic or syntax is failing, explain the underlying rule (e.g. scope rules or coercion algorithms), and provide a helpful clue or hint so they can correct it themselves.
 4. Keep the explanation brief, encouraging, clear, and formatted nicely in Markdown.`;
 
-    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
+    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
     const response = await fetch(apiURL, {
       method: 'POST',
@@ -215,7 +215,7 @@ YOUR BEHAVIOR:
       });
     }
 
-    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
+    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const response = await fetch(apiURL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -262,7 +262,7 @@ ${logs && logs.length > 0 ? logs.join('\\n') : 'No output logs'}
 Identify the bug, explain what went wrong conceptually, and provide a clear, helpful clue or hint.
 CRITICAL: Do NOT write the correct code solution. Let them write the code themselves. Keep the explanation very brief and encouraging.`;
 
-    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
+    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const response = await fetch(apiURL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -341,7 +341,7 @@ Return the result strictly as a valid JSON array of objects. Do NOT wrap it in m
   {"question": "...", "answer": "..."}
 ]`;
 
-    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
+    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const response = await fetch(apiURL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -403,7 +403,7 @@ Return the result strictly as a valid JSON array of objects. Do NOT wrap it in m
   }
 ]`;
 
-    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
+    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const response = await fetch(apiURL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
