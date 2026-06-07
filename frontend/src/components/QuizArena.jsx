@@ -244,7 +244,7 @@ const QuizArena = () => {
         </p>
 
         {/* Day selection tabs */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '30px', borderBottom: '1px solid #222', paddingBottom: '15px' }}>
+        <div className="quiz-arena-tabs" style={{ display: 'flex', gap: '10px', marginBottom: '30px', borderBottom: '1px solid #222', paddingBottom: '15px' }}>
           {[1, 2, 3, 4].map(dayNum => (
             <button
               key={dayNum}

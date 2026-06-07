@@ -661,13 +661,13 @@ const DayModule = ({ day, user, onBack, onUpdatePoints }) => {
                   <button
                     className="btn-neon"
                     onClick={askGemini}
-                    disabled={!code || code.trim() === lesson.exercise.startCode.trim()}
+                    disabled={!code}
                     style={{ 
                       padding: '8px 16px', 
                       fontSize: '13px', 
                       color: 'var(--neon-blue)', 
                       borderColor: 'var(--neon-blue)',
-                      opacity: (!code || code.trim() === lesson.exercise.startCode.trim()) ? 0.4 : 1
+                      opacity: !code ? 0.4 : 1
                     }}
                   >
                     🤖 Ask AI Tutor

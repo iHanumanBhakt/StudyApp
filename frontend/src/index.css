@@ -588,3 +588,129 @@ pre, code {
   background: var(--neon-blue) !important;
   box-shadow: 0 0 10px var(--neon-blue-glow);
 }
+
+/* Mobile Responsiveness Media Queries */
+@media (max-width: 768px) {
+  /* Body settings */
+  body {
+    font-size: 16px; /* slightly smaller body text on mobile */
+  }
+
+  /* App Header responsive overrides */
+  .app-header {
+    height: auto !important;
+    flex-direction: column;
+    padding: 15px !important;
+    gap: 15px;
+    align-items: center;
+    text-align: center;
+  }
+  .logo-text {
+    font-size: 20px !important;
+    letter-spacing: 2px !important;
+  }
+  .logo-sub {
+    font-size: 10px !important;
+    letter-spacing: 1px !important;
+  }
+  .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px !important;
+    width: 100%;
+  }
+  .nav-link {
+    font-size: 13px !important;
+    padding: 6px 10px !important;
+  }
+  .user-info-badge {
+    padding: 4px 10px !important;
+    font-size: 12px !important;
+  }
+  
+  /* Landing page flashlight overrides on touch screens */
+  .flashlight-overlay {
+    background: radial-gradient(circle 260px at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.95) 90%, #000000 100%) !important;
+  }
+  .bg-facts-layer {
+    opacity: 0.15; /* Make facts subtly readable in the background rather than invisible */
+    pointer-events: none;
+  }
+  .fact-snippet {
+    font-size: 12px !important;
+  }
+  .flashlight-container .glass-card {
+    padding: 25px 15px !important;
+  }
+  .flashlight-container h1 {
+    font-size: 30px !important;
+  }
+
+  /* Dashboard Grid */
+  .dashboard-grid {
+    padding: 20px 15px !important;
+    gap: 20px !important;
+  }
+  
+  /* Learning module sidebar and content */
+  .learn-sidebar {
+    padding: 20px 15px !important;
+  }
+  .module-tab {
+    padding: 12px 8px !important;
+    font-size: 11px !important;
+    flex: 1;
+    text-align: center;
+    letter-spacing: 0.5px !important;
+  }
+  
+  /* IDE container mobile constraints */
+  .ide-container {
+    height: 75vh !important; /* Constrain split panes to 75% viewport height on mobile so resize works */
+  }
+  .ide-textarea {
+    font-size: 14px !important;
+    padding: 15px !important;
+  }
+  .ide-console {
+    font-size: 12px !important;
+  }
+  .ide-actions {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch !important;
+    padding: 15px !important;
+  }
+  .ide-actions div:first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .ide-actions div:last-child {
+    display: flex;
+    width: 100%;
+  }
+  .ide-actions button {
+    flex: 1;
+    text-align: center;
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+  }
+  
+  /* Simulators horizontal scrolling safety */
+  .sim-container, 
+  .compiler-container, 
+  .memory-container, 
+  .coercion-container, 
+  .math-container,
+  .visualizer-board {
+    overflow-x: auto !important;
+    max-width: 100% !important;
+  }
+  
+  /* Quiz Arena tabs wrapper */
+  .quiz-arena-tabs {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
