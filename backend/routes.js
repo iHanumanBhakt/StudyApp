@@ -141,17 +141,19 @@ YOUR RULES AND BEHAVIOR:
 3. Code-Writing Restriction: Do NOT write the final correct solution code for the student under any circumstances. You must act as a tutor—point out where their logic or syntax is failing, explain the underlying rule (e.g. scope rules or coercion algorithms), and provide a helpful clue or hint so they can correct it themselves.
 4. Keep the explanation brief, encouraging, clear, and formatted nicely in Markdown.`;
 
-    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
     
     const response = await fetch(apiURL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }]
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          maxOutputTokens: 350,
+          temperature: 0.2
+        }
       })
     });
 
@@ -203,7 +205,9 @@ YOUR BEHAVIOR:
     ];
 
     if (messages && messages.length > 0) {
-      messages.forEach(msg => {
+      // Limit to last 6 messages to keep context window and token usage small
+      const recentMessages = messages.slice(-6);
+      recentMessages.forEach(msg => {
         formattedContents.push({
           role: msg.sender === 'user' ? 'user' : 'model',
           parts: [{ text: msg.text }]
@@ -211,11 +215,17 @@ YOUR BEHAVIOR:
       });
     }
 
-    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
     const response = await fetch(apiURL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: formattedContents })
+      body: JSON.stringify({
+        contents: formattedContents,
+        generationConfig: {
+          maxOutputTokens: 300,
+          temperature: 0.7
+        }
+      })
     });
     const result = await response.json();
     if (!response.ok) {
@@ -252,14 +262,18 @@ ${logs && logs.length > 0 ? logs.join('\\n') : 'No output logs'}
 Identify the bug, explain what went wrong conceptually, and provide a clear, helpful clue or hint.
 CRITICAL: Do NOT write the correct code solution. Let them write the code themselves. Keep the explanation very brief and encouraging.`;
 
-    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
     const response = await fetch(apiURL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{
           parts: [{ text: prompt }]
-        }]
+        }],
+        generationConfig: {
+          maxOutputTokens: 250,
+          temperature: 0.2
+        }
       })
     });
     const result = await response.json();
@@ -327,14 +341,19 @@ Return the result strictly as a valid JSON array of objects. Do NOT wrap it in m
   {"question": "...", "answer": "..."}
 ]`;
 
-    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
     const response = await fetch(apiURL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{
           parts: [{ text: prompt }]
-        }]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          maxOutputTokens: 800,
+          temperature: 0.2
+        }
       })
     });
     const result = await response.json();
@@ -384,14 +403,19 @@ Return the result strictly as a valid JSON array of objects. Do NOT wrap it in m
   }
 ]`;
 
-    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
     const response = await fetch(apiURL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{
           parts: [{ text: prompt }]
-        }]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          maxOutputTokens: 1000,
+          temperature: 0.2
+        }
       })
     });
     const result = await response.json();
