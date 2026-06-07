@@ -35,7 +35,7 @@ const MODULES_DATA = [
     desc: 'Construct secure Express REST APIs, build robust routing layers, establish data validation middleware, and log server events.',
     status: 'Locked',
     theme: 'theme-backend',
-    requirements: 'Requires: 400 XP & JS Foundation Badges',
+    requirements: 'Requires: 500 XP & JS Foundation Badges',
     isLocked: true,
     graphic: (
       <svg viewBox="0 0 100 100" className="svg-float" style={{ width: '100%', height: '100%' }}>
@@ -59,7 +59,7 @@ const MODULES_DATA = [
     desc: 'Master React state engines, visual data structures, complex animation curves, drag resize event loops, and fluid CSS grids.',
     status: 'Locked',
     theme: 'theme-frontend',
-    requirements: 'Requires: 800 XP & Backend Mastery',
+    requirements: 'Requires: 1000 XP & Backend Mastery',
     isLocked: true,
     graphic: (
       <svg viewBox="0 0 100 100" className="svg-float" style={{ width: '100%', height: '100%' }}>
@@ -81,7 +81,7 @@ const MODULES_DATA = [
     desc: 'Architect distributed systems, partition database rings, configure horizontal layers, build rate limiters and queues.',
     status: 'Locked',
     theme: 'theme-sysdesign',
-    requirements: 'Requires: 1200 XP & Frontend Mastery',
+    requirements: 'Requires: 1500 XP & Frontend Mastery',
     isLocked: true,
     graphic: (
       <svg viewBox="0 0 100 100" className="svg-float" style={{ width: '100%', height: '100%' }}>
@@ -110,7 +110,7 @@ const MODULES_DATA = [
     desc: 'Assemble CI/CD automation pipelines, package apps with Docker, orchestrate nodes, and manage logging infrastructure.',
     status: 'Locked',
     theme: 'theme-devops',
-    requirements: 'Requires: 1600 XP & System Design',
+    requirements: 'Requires: 2000 XP & System Design',
     isLocked: true,
     graphic: (
       <svg viewBox="0 0 100 100" className="svg-float" style={{ width: '100%', height: '100%' }}>
@@ -173,13 +173,13 @@ const Dashboard = ({ user, onSelectModule }) => {
       case 'js-foundation':
         return false;
       case 'backend-mastery':
-        return !(user.points >= 400 && hasAllJsBadges);
+        return !(user.points >= 500 && hasAllJsBadges);
       case 'frontend-mastery':
-        return !(user.points >= 800);
+        return !(user.points >= 1000);
       case 'system-design':
-        return !(user.points >= 1200);
+        return !(user.points >= 1500);
       case 'devops-module':
-        return !(user.points >= 1600);
+        return !(user.points >= 2000);
       default:
         return true;
     }

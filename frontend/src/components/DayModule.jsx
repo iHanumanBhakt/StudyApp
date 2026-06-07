@@ -974,14 +974,37 @@ const DayModule = ({ day, user, initialTab, onBack, onUpdatePoints }) => {
             <h4 style={{ fontSize: '15px', color: 'var(--neon-blue)', margin: 0, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>🤖</span> AI Partner
             </h4>
-            <button 
-              className="btn-neon-blue"
-              onClick={handleExplainCode}
-              disabled={chatLoading}
-              style={{ padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}
-            >
-              🔍 Explain Code
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button 
+                className="btn-neon-blue"
+                onClick={handleExplainCode}
+                disabled={chatLoading}
+                style={{ padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}
+              >
+                🔍 Explain Code
+              </button>
+              <button
+                onClick={() => setIsAiPanelOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  fontSize: '18px',
+                  cursor: 'pointer',
+                  padding: '2px 4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'color 0.2s',
+                  outline: 'none'
+                }}
+                onMouseEnter={(e) => e.target.style.color = 'var(--neon-red)'}
+                onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+                title="Close Sidebar"
+              >
+                ✖
+              </button>
+            </div>
           </div>
           
           <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
