@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { playSpaceSound } from '../utils/audio';
 
 const BADGE_DESCS = {
@@ -138,6 +138,7 @@ const Dashboard = ({ user, onSelectModule }) => {
   const [scanningCardId, setScanningCardId] = useState(null);
   const [selectedDayNum, setSelectedDayNum] = useState(1);
   const [flashcards, setFlashcards] = useState([]);
+  const scanTimeoutRef = useRef(null);
   const [currentCardIdx, setCurrentCardIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [cardsLoading, setCardsLoading] = useState(false);
@@ -208,8 +209,12 @@ const Dashboard = ({ user, onSelectModule }) => {
     if (isLocked) {
       playSpaceSound('denied');
       setScanningCardId(m.id);
-      setTimeout(() => {
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+      }
+      scanTimeoutRef.current = setTimeout(() => {
         setScanningCardId(null);
+        scanTimeoutRef.current = null;
       }, 2500);
     } else {
       onSelectModule(m.id);

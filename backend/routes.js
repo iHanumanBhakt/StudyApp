@@ -125,7 +125,15 @@ router.post('/ai/explain', async (req, res) => {
   }
 
   try {
-    const prompt = `You are a supportive, professional JavaScript tutor helping a beginner student. They are working on the following coding challenge: "${desc}".
+    const systemPrompt = `You are a supportive, professional JavaScript tutor helping a beginner student in a JavaScript Masterclass.
+
+YOUR RULES AND BEHAVIOR:
+1. Scope Constraint: You must ONLY talk about topics covered in JavaScript Day 1 to Day 4 (variables, block scopes let/const/var, Temporal Dead Zone, primitive data types (string, number, boolean, null, undefined, bigint, symbol), mutability, Stack vs Heap, loose vs strict comparisons, type coercion rules, conditionals, loops (for, while, do-while), IEEE-754 binary truncation floating point errors, Math random formulas, and basic String indexing methods).
+2. If the student's request, code, or context is completely unrelated to JavaScript Day 1 to Day 4 (e.g. asking about HTML/CSS, React, SQL, databases, other languages like Python/Java, or general non-programming topics like history, cooking, sports, etc.), you MUST politely refuse to answer and guide them back to their Day 1-4 JavaScript course topics. Say: "I can only help you with JavaScript basics covered in this course."
+3. Code-Writing Restriction: Do NOT write the final correct solution code for the student under any circumstances. You must act as a tutor—point out where their logic or syntax is failing, explain the underlying rule (e.g. scope rules or coercion algorithms), and provide a helpful clue or hint so they can correct it themselves.
+4. Keep the explanation brief, encouraging, clear, and formatted nicely in Markdown.`;
+
+    const userPrompt = `They are working on the following coding challenge: "${desc}".
 Their current workspace code is:
 \`\`\`javascript
 ${code}
@@ -134,12 +142,7 @@ Their console output/errors are:
 \`\`\`
 ${logs && logs.length > 0 ? logs.join('\\n') : 'No output logs yet'}
 \`\`\`
-
-YOUR RULES AND BEHAVIOR:
-1. Scope Constraint: You must ONLY talk about topics covered in JavaScript Day 1 to Day 4 (variables, block scopes let/const/var, Temporal Dead Zone, primitive data types (string, number, boolean, null, undefined, bigint, symbol), mutability, Stack vs Heap, loose vs strict comparisons, type coercion rules, conditionals, loops (for, while, do-while), IEEE-754 binary truncation floating point errors, Math random formulas, and basic String indexing methods).
-2. If the student's code, error, or implicit request is completely unrelated to JavaScript Day 1 to Day 4 (e.g. asking about HTML/CSS, React, SQL, backend databases, other languages like Python/Java, or general non-programming topics), politely refuse to answer and guide them back to their Day 1-4 JavaScript course topics.
-3. Code-Writing Restriction: Do NOT write the final correct solution code for the student under any circumstances. You must act as a tutor—point out where their logic or syntax is failing, explain the underlying rule (e.g. scope rules or coercion algorithms), and provide a helpful clue or hint so they can correct it themselves.
-4. Keep the explanation brief, encouraging, clear, and formatted nicely in Markdown.`;
+Please analyze this code and explain the errors or guide them to the next steps.`;
 
     const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
@@ -147,8 +150,12 @@ YOUR RULES AND BEHAVIOR:
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
         contents: [{
-          parts: [{ text: prompt }]
+          role: 'user',
+          parts: [{ text: userPrompt }]
         }],
         generationConfig: {
           maxOutputTokens: 350,
@@ -166,8 +173,9 @@ YOUR RULES AND BEHAVIOR:
     res.json({ explanation: text });
 
   } catch (err) {
-    console.error("Gemini API Error:", err);
-    res.status(500).json({ error: 'Failed to contact Gemini AI: ' + err.message });
+    console.error("Gemini API Error, serving fallback:", err);
+    let mockExplanation = "🤖 **AI Tutor (Offline / High Demand Fallback)**:\n\nIt looks like you're writing some JavaScript! Here's a review of your code:\n\n1. **Structure Check**: Make sure your logic corresponds exactly to the exercise requirements.\n2. **Standard Output**: If you're printing results, ensure you call \`console.log()\` explicitly.\n3. **Scope Variable rules**: If you're modifying const references or entering temporal dead zones, verify declarations.\n\n*Note: Our AI service is currently experiencing high demand. Please try again in a few moments for live AI analysis.*";
+    res.json({ explanation: mockExplanation });
   }
 });
 
@@ -189,21 +197,16 @@ ${code || '// No code written yet'}
 \`\`\`
 Their console execution logs are:
 \`\`\`
-${logs && logs.length > 0 ? logs.join('\\n') : 'No output logs yet'}
+${logs && logs.length > 0 ? logs.join('\n') : 'No output logs yet'}
 \`\`\`
 
-YOUR BEHAVIOR:
+YOUR RULES AND BEHAVIOR:
 1. Be encouraging, positive, and conversational. Use friendly space-vibes or coder-vibes.
 2. Tutor Mode: Do NOT directly solve coding challenges or provide complete copy-paste answers if they ask you to write the solution. Guide them, explain syntax rules, and provide helpful code snippets or hints.
-3. Keep answers concise, highly readable, and formatted in Markdown.`;
+3. Keep answers concise, highly readable, and formatted in Markdown.
+4. SCOPE CONSTRAINT & OUT-OF-CONTEXT REJECTION: You are only allowed to answer questions related to JavaScript concepts covered in this course (Day 1 to 4: variables, let/const/var, hoisting, Temporal Dead Zone, primitives, mutability, Stack vs Heap, coercion, loose vs strict equality, relational checks, falsy values, logical operators, short-circuiting, loops, Math.random, IEEE-754, String methods, and basic debugging). If the user asks about anything out of context (e.g., HTML/CSS, React, SQL, backend databases, other programming languages like Python/Java, or general non-programming topics like history, cooking, sports, etc.), you MUST politely reject the request, state that you are a JavaScript learning assistant, and guide them back to their JS course work. Say: "I can only help you with JavaScript basics covered in this course."`;
 
-    const formattedContents = [
-      {
-        role: 'user',
-        parts: [{ text: systemPrompt }]
-      }
-    ];
-
+    const formattedContents = [];
     if (messages && messages.length > 0) {
       // Limit to last 6 messages to keep context window and token usage small
       const recentMessages = messages.slice(-6);
@@ -213,6 +216,11 @@ YOUR BEHAVIOR:
           parts: [{ text: msg.text }]
         });
       });
+    } else {
+      formattedContents.push({
+        role: 'user',
+        parts: [{ text: 'Hello!' }]
+      });
     }
 
     const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -220,6 +228,9 @@ YOUR BEHAVIOR:
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
         contents: formattedContents,
         generationConfig: {
           maxOutputTokens: 300,
@@ -234,8 +245,10 @@ YOUR BEHAVIOR:
     const text = result.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.';
     res.json({ text });
   } catch (err) {
-    console.error("AI Chat Error:", err);
-    res.status(500).json({ error: err.message });
+    console.error("AI Chat Error, serving fallback:", err);
+    res.json({
+      text: "🤖 **AI Partner (High Demand Fallback)**: Hi! I see you are on Day " + (currentDay || 1) + ". Our AI service is currently experiencing very high demand, so I'm running in offline backup mode. Try checking your scope variable rules and running your code again!"
+    });
   }
 });
 
@@ -249,26 +262,35 @@ router.post('/ai/debug', async (req, res) => {
     });
   }
   try {
-    const prompt = `The student is trying to solve this coding challenge: "${desc}".
-Their code is:
+    const systemPrompt = `You are a supportive, precise JavaScript debugger tutor.
+Their challenge description is: "${desc}".
+
+YOUR RULES AND BEHAVIOR:
+1. Identify the bug in the student's code, explain what went wrong conceptually, and provide a clear, helpful clue or hint.
+2. CRITICAL: Do NOT write the correct code solution. Let them write the code themselves. Keep the explanation very brief and encouraging.
+3. SCOPE CONSTRAINT & REJECTION: If their query, error, or request is unrelated to JavaScript Day 1 to 4 course concepts (e.g. asking about HTML/CSS, React, SQL, backend, or general non-programming topics), you must politely refuse to analyze and guide them back to course work. Say: "I can only help you with JavaScript basics covered in this course."`;
+
+    const userPrompt = `Student code:
 \`\`\`javascript
 ${code}
 \`\`\`
-Their failing console output/errors are:
+Failing logs:
 \`\`\`
-${logs && logs.length > 0 ? logs.join('\\n') : 'No output logs'}
+${logs && logs.length > 0 ? logs.join('\n') : 'No output logs'}
 \`\`\`
-
-Identify the bug, explain what went wrong conceptually, and provide a clear, helpful clue or hint.
-CRITICAL: Do NOT write the correct code solution. Let them write the code themselves. Keep the explanation very brief and encouraging.`;
+Please identify the bug and offer a helpful hint.`;
 
     const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const response = await fetch(apiURL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
         contents: [{
-          parts: [{ text: prompt }]
+          role: 'user',
+          parts: [{ text: userPrompt }]
         }],
         generationConfig: {
           maxOutputTokens: 250,
@@ -283,8 +305,10 @@ CRITICAL: Do NOT write the correct code solution. Let them write the code themse
     const explanation = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to debug code.';
     res.json({ explanation });
   } catch (err) {
-    console.error("AI Debug Error:", err);
-    res.status(500).json({ error: err.message });
+    console.error("AI Debug Error, serving fallback:", err);
+    res.json({
+      explanation: "🤖 **AI Debugger (High Demand Fallback)**: Check your console logs. If your output is empty, ensure you call `console.log()` to print your result. If you see a syntax or type error, verify your brackets, assignment variables, and scope declarations!"
+    });
   }
 });
 
@@ -375,8 +399,116 @@ router.post('/ai/quiz', async (req, res) => {
   const { day } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;
 
+  const mockQuizzes = {
+    1: [
+      {
+        q: "Which company originally hired Brendan Eich to design JavaScript in 1995?",
+        options: ["Microsoft", "Netscape", "Sun Microsystems", "AOL"],
+        answer: 1,
+        explanation: "Brendan Eich created JavaScript in May 1995 while working at Netscape Communications."
+      },
+      {
+        q: "Why is executing raw C++ directly in a web browser considered dangerous?",
+        options: [
+          "It lacks native sandboxing, allowing direct reads/writes to the client's hard drive.",
+          "C++ is too slow to execute in real-time.",
+          "It doesn't support basic variables.",
+          "It forces the browser to run on a single thread."
+        ],
+        answer: 0,
+        explanation: "Unlike JS, C++ has no built-in sandboxing. Running it raw would give malicious sites full root access to the host machine."
+      },
+      {
+        q: "What is the primary role of the Garbage Collector in JavaScript?",
+        options: [
+          "It checks for syntax bugs prior to run-time compilation.",
+          "It deletes unused CSS style files.",
+          "It automatically reclaims memory allocated to objects that are no longer referenced or reachable.",
+          "It prevents temporal dead zone errors."
+        ],
+        answer: 2,
+        explanation: "The Garbage Collector automatically monitors reference paths and frees memory when objects are no longer reachable."
+      }
+    ],
+    2: [
+      {
+        q: "What error is thrown when trying to access a 'let' variable within its block scope before its declaration line?",
+        options: ["TypeError", "ReferenceError", "SyntaxError", "RangeError"],
+        answer: 1,
+        explanation: "Accessing let or const variables before their declaration line inside their block scope falls in the Temporal Dead Zone (TDZ), throwing a ReferenceError."
+      },
+      {
+        q: "Which of the following is NOT one of the 7 primitive types in JavaScript?",
+        options: ["string", "boolean", "array", "symbol"],
+        answer: 2,
+        explanation: "Arrays (and functions) are objects, not primitives. The 7 primitive types are string, number, boolean, null, undefined, bigint, and symbol."
+      },
+      {
+        q: "Why does 'typeof null' evaluate to 'object' in JavaScript?",
+        options: [
+          "Null is technically a specialized object reference.",
+          "It is a legacy bug in the original 1995 JS engine type tags that was kept for backward compatibility.",
+          "The JS engine automatically casts null values to objects.",
+          "Null stands for 'Object Empty'."
+        ],
+        answer: 1,
+        explanation: "In the first JS implementation, values were represented with type tags. The tag for objects was 0, and null was represented as the NULL pointer (all 0s), resulting in typeof null returning 'object'. It was never fixed to avoid breaking existing code."
+      }
+    ],
+    3: [
+      {
+        q: "What is the result of '0.1 + 0.2 === 0.3' in standard JavaScript environments?",
+        options: ["true", "false", "undefined", "throws an error"],
+        answer: 1,
+        explanation: "It returns false. JavaScript uses the IEEE-754 standard for double-precision floats. Binary representations of 0.1 and 0.2 cannot be stored exactly, leading to a small precision error (0.30000000000000004)."
+      },
+      {
+        q: "Which of the following values is NOT falsy?",
+        options: ["0", "'' (empty string)", "[] (empty array)", "NaN"],
+        answer: 2,
+        explanation: "An empty array `[]` is truthy. The 6 falsy values are false, 0, '' (empty string), null, undefined, and NaN."
+      },
+      {
+        q: "How does the loose equality (==) operator compare values of different types?",
+        options: [
+          "It compares their memory references directly.",
+          "It uses implicit type coercion to convert both values to a common primitive type (usually numbers) before comparing.",
+          "It checks if their names match.",
+          "It throws a TypeError immediately."
+        ],
+        answer: 1,
+        explanation: "The == operator uses type coercion rules to convert values (like strings or booleans to numbers) before performing the comparison."
+      }
+    ],
+    4: [
+      {
+        q: "What is the primary difference between a while loop and a do-while loop?",
+        options: [
+          "A do-while loop only runs if the condition is false.",
+          "A while loop guarantees that the code block will execute at least once.",
+          "A do-while loop executes the block once before checking the condition, guaranteeing at least one execution.",
+          "A do-while loop runs on a separate browser thread."
+        ],
+        answer: 2,
+        explanation: "A do-while loop evaluates its condition after running the loop body, guaranteeing it runs at least once, unlike a standard while loop which checks first."
+      },
+      {
+        q: "In JavaScript, string primitive methods like toUpperCase() exhibit what behavior?",
+        options: [
+          "They modify the string in-place.",
+          "They return a brand new string because primitive strings are immutable.",
+          "They change the stack memory address of the string.",
+          "They convert the string into an array of characters."
+        ],
+        answer: 1,
+        explanation: "JavaScript strings are immutable. All string operations return a new string, leaving the original string completely unchanged."
+      }
+    ]
+  };
+
   if (!apiKey) {
-    return res.status(400).json({ error: "API Key required for dynamic quiz generation." });
+    console.log("No GEMINI_API_KEY found for quiz. Serving mock quiz.");
+    return res.json({ questions: mockQuizzes[day] || mockQuizzes[1] });
   }
 
   try {
@@ -427,8 +559,8 @@ Return the result strictly as a valid JSON array of objects. Do NOT wrap it in m
     const questions = JSON.parse(text);
     res.json({ questions });
   } catch (err) {
-    console.error("AI Quiz Error:", err);
-    res.status(500).json({ error: err.message });
+    console.warn("Gemini Quiz failed or JSON parse failed. Serving fallback mock quiz.", err);
+    res.json({ questions: mockQuizzes[day] || mockQuizzes[1] });
   }
 });
 
