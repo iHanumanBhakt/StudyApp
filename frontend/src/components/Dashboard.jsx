@@ -136,6 +136,35 @@ const MODULES_DATA = [
 
 const Dashboard = ({ user, onSelectModule }) => {
   const [scanningCardId, setScanningCardId] = useState(null);
+  const [selectedDayNum, setSelectedDayNum] = useState(1);
+  const [flashcards, setFlashcards] = useState([]);
+  const [currentCardIdx, setCurrentCardIdx] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [cardsLoading, setCardsLoading] = useState(false);
+
+  const handleLoadFlashcards = (dayNum) => {
+    setCardsLoading(true);
+    setIsFlipped(false);
+    setCurrentCardIdx(0);
+    setFlashcards([]);
+    
+    fetch('http://localhost:5000/api/ai/flashcards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ day: dayNum })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.flashcards) {
+        setFlashcards(data.flashcards);
+      }
+      setCardsLoading(false);
+    })
+    .catch(err => {
+      console.error("Failed to load flashcards:", err);
+      setCardsLoading(false);
+    });
+  };
 
   const getDynamicLockStatus = (moduleId) => {
     const hasAllJsBadges = ["Sandbox Safe", "Memory Master", "Float Fixer", "Loop Legend"].every(b => user.badges?.includes(b));
@@ -267,6 +296,175 @@ const Dashboard = ({ user, onSelectModule }) => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* AI STUDY DECK WIDGET */}
+        <div className="glass-card ai-flashcard-deck">
+          <h3 style={{ fontSize: '20px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>🧠</span> AI Study Deck
+          </h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '15px' }}>
+            Review core concepts with flippable flashcards generated on the fly.
+          </p>
+          
+          {/* Day selection tabs */}
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '5px' }}>
+            {[1, 2, 3, 4].map(dNum => {
+              const isDayLocked = dNum > user.currentDay;
+              const isSelected = selectedDayNum === dNum;
+              return (
+                <button
+                  key={dNum}
+                  onClick={() => {
+                    if (!isDayLocked) {
+                      setSelectedDayNum(dNum);
+                      setFlashcards([]);
+                    }
+                  }}
+                  disabled={isDayLocked}
+                  className={`btn-neon ${isSelected ? 'active' : ''}`}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '11px',
+                    opacity: isDayLocked ? 0.3 : 1,
+                    cursor: isDayLocked ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  Day 0{dNum} {isDayLocked && '🔒'}
+                </button>
+              );
+            })}
+          </div>
+
+          {cardsLoading ? (
+            <div style={{ height: '180px', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '10px' }}>
+              <span className="spinner" style={{ fontSize: '24px', display: 'inline-block' }}>🌀</span>
+              <span style={{ fontSize: '12px', fontFamily: 'monospace', color: 'var(--neon-blue)' }}>Synthesizing flashcards...</span>
+            </div>
+          ) : flashcards.length > 0 ? (
+            <div>
+              {/* Flippable Card Container */}
+              <div 
+                className={`flashcard-container ${isFlipped ? 'flipped' : ''}`} 
+                onClick={() => setIsFlipped(!isFlipped)}
+                style={{
+                  height: '180px',
+                  perspective: '1000px',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  marginBottom: '15px'
+                }}
+              >
+                <div 
+                  className="flashcard-inner"
+                  style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    transformStyle: 'preserve-3d',
+                    transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transform: isFlipped ? 'rotateY(180deg)' : 'none'
+                  }}
+                >
+                  {/* Front Face */}
+                  <div 
+                    className="flashcard-front"
+                    style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      backfaceVisibility: 'hidden',
+                      background: 'rgba(255,255,255,0.01)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: '8px',
+                      padding: '20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      boxSizing: 'border-box',
+                      boxShadow: 'inset 0 0 10px rgba(0,210,255,0.05)'
+                    }}
+                  >
+                    <span style={{ fontSize: '11px', color: 'var(--neon-blue)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px', fontFamily: 'monospace' }}>Question</span>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#fff', textAlign: 'center', lineHeight: '1.4' }}>
+                      {flashcards[currentCardIdx]?.question}
+                    </p>
+                    <span style={{ fontSize: '10px', color: '#444', marginTop: '15px' }}>[Click to flip]</span>
+                  </div>
+
+                  {/* Back Face */}
+                  <div 
+                    className="flashcard-back"
+                    style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      backfaceVisibility: 'hidden',
+                      background: 'rgba(0,210,255,0.03)',
+                      border: '1px solid rgba(0,210,255,0.2)',
+                      borderRadius: '8px',
+                      padding: '20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      boxSizing: 'border-box',
+                      transform: 'rotateY(180deg)',
+                      boxShadow: '0 0 15px rgba(0,210,255,0.05)'
+                    }}
+                  >
+                    <span style={{ fontSize: '11px', color: 'var(--neon-green)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px', fontFamily: 'monospace' }}>Answer</span>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#e4e4e7', textAlign: 'center', lineHeight: '1.4' }}>
+                      {flashcards[currentCardIdx]?.answer}
+                    </p>
+                    <span style={{ fontSize: '10px', color: '#444', marginTop: '15px' }}>[Click to flip back]</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation controls */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <button
+                  className="btn-neon"
+                  disabled={currentCardIdx === 0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsFlipped(false);
+                    setTimeout(() => setCurrentCardIdx(prev => prev - 1), 150);
+                  }}
+                  style={{ padding: '4px 10px', fontSize: '11px', opacity: currentCardIdx === 0 ? 0.3 : 1 }}
+                >
+                  ← Prev
+                </button>
+                <span style={{ fontSize: '12px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                  Card {currentCardIdx + 1} of {flashcards.length}
+                </span>
+                <button
+                  className="btn-neon"
+                  disabled={currentCardIdx === flashcards.length - 1}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsFlipped(false);
+                    setTimeout(() => setCurrentCardIdx(prev => prev + 1), 150);
+                  }}
+                  style={{ padding: '4px 10px', fontSize: '11px', opacity: currentCardIdx === flashcards.length - 1 ? 0.3 : 1 }}
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <button 
+                className="btn-neon-blue"
+                onClick={() => handleLoadFlashcards(selectedDayNum)}
+                style={{ width: '100%', padding: '12px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                🧠 Generate Flashcards
+              </button>
+            </div>
+          )}
         </div>
 
 

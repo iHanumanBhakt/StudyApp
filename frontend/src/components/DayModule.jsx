@@ -178,6 +178,12 @@ const DayModule = ({ day, user, initialTab, onBack, onUpdatePoints }) => {
   const [aiError, setAiError] = useState('');
 
   const [editorHeight, setEditorHeight] = useState(300);
+  const [isAiPanelOpen, setIsAiPanelOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([
+    { sender: 'ai', text: "🤖 **AI Study Partner**: Hey! I'm your AI Partner. Ask me anything about today's concepts, or click **Explain Code** to get a line-by-line analysis of your active code!" }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   const containerRef = useRef(null);
@@ -331,6 +337,95 @@ const DayModule = ({ day, user, initialTab, onBack, onUpdatePoints }) => {
     });
   };
 
+  const debugWithAi = () => {
+    setConsoleTab('ai');
+    setAiLoading(true);
+    setAiFeedback('');
+    setAiError('');
+    setChatMessages(prev => [...prev, { sender: 'user', text: "Can you analyze my failed code and debug it?" }]);
+
+    fetch(`${API_BASE_URL}/api/ai/debug`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: code,
+        logs: consoleLogs,
+        desc: lesson.exercise.desc
+      })
+    })
+    .then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to debug');
+      return data;
+    })
+    .then((data) => {
+      setAiFeedback(data.explanation);
+      setChatMessages(prev => [...prev, { sender: 'ai', text: data.explanation }]);
+      setAiLoading(false);
+    })
+    .catch((err) => {
+      setAiError(err.message);
+      setChatMessages(prev => [...prev, { sender: 'ai', text: "Error: " + err.message }]);
+      setAiLoading(false);
+    });
+  };
+
+  const handleExplainCode = () => {
+    setChatLoading(true);
+    setChatMessages(prev => [...prev, { sender: 'user', text: 'Can you explain my current workspace code?' }]);
+    
+    fetch(`${API_BASE_URL}/api/ai/explain`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: code,
+        logs: consoleLogs,
+        desc: lesson?.exercise?.desc || `Day ${day} concepts`
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      setChatMessages(prev => [...prev, { sender: 'ai', text: data.explanation || "I couldn't analyze the code." }]);
+      setChatLoading(false);
+    })
+    .catch(err => {
+      console.error(err);
+      setChatMessages(prev => [...prev, { sender: 'ai', text: "Error connecting to AI: " + err.message }]);
+      setChatLoading(false);
+    });
+  };
+
+  const handleSendChatMessage = (e) => {
+    e.preventDefault();
+    if (!chatInput.trim() || chatLoading) return;
+    
+    const userMsg = chatInput.trim();
+    setChatInput('');
+    setChatMessages(prev => [...prev, { sender: 'user', text: userMsg }]);
+    setChatLoading(true);
+    
+    fetch(`${API_BASE_URL}/api/ai/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [...chatMessages, { sender: 'user', text: userMsg }].slice(-10),
+        currentDay: day,
+        code: code,
+        logs: consoleLogs
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      setChatMessages(prev => [...prev, { sender: 'ai', text: data.text || "No response." }]);
+      setChatLoading(false);
+    })
+    .catch(err => {
+      console.error(err);
+      setChatMessages(prev => [...prev, { sender: 'ai', text: "Error: " + err.message }]);
+      setChatLoading(false);
+    });
+  };
+
   const runCode = () => {
     setIdeAlert('');
     setExerciseStatus('running');
@@ -433,7 +528,7 @@ const DayModule = ({ day, user, initialTab, onBack, onUpdatePoints }) => {
       ref={learnContainerRef}
       className="learn-container"
       style={{
-        gridTemplateColumns: isMobile ? '1fr' : `${sidebarWidth}px 4px 1fr`,
+        gridTemplateColumns: isMobile ? '1fr' : `${sidebarWidth}px 4px 1fr${isAiPanelOpen ? ' 350px' : ''}`,
         userSelect: isResizingSidebar ? 'none' : 'auto'
       }}
     >
@@ -553,25 +648,34 @@ const DayModule = ({ day, user, initialTab, onBack, onUpdatePoints }) => {
 
       {/* Right Column: Dynamic Tabs (Visualizer & Coding Area) */}
       <div className="learn-content">
-        <div className="module-tabs">
-          <div 
-            className={`module-tab ${activeSubTab === 'theory' ? 'active' : ''}`}
-            onClick={() => setActiveSubTab('theory')}
-          >
-            Module Theory Summary
+        <div className="module-tabs" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex' }}>
+            <div 
+              className={`module-tab ${activeSubTab === 'theory' ? 'active' : ''}`}
+              onClick={() => setActiveSubTab('theory')}
+            >
+              Module Theory Summary
+            </div>
+            <div 
+              className={`module-tab ${activeSubTab === 'simulator' ? 'active' : ''}`}
+              onClick={() => setActiveSubTab('simulator')}
+            >
+              Visual Simulator
+            </div>
+            <div 
+              className={`module-tab ${activeSubTab === 'practice' ? 'active' : ''}`}
+              onClick={() => setActiveSubTab('practice')}
+            >
+              Coding IDE Challenge
+            </div>
           </div>
-          <div 
-            className={`module-tab ${activeSubTab === 'simulator' ? 'active' : ''}`}
-            onClick={() => setActiveSubTab('simulator')}
+          <button 
+            className={`btn-neon-blue ${isAiPanelOpen ? 'active' : ''}`}
+            onClick={() => setIsAiPanelOpen(!isAiPanelOpen)}
+            style={{ padding: '6px 14px', fontSize: '12px', marginRight: '15px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
           >
-            Visual Simulator
-          </div>
-          <div 
-            className={`module-tab ${activeSubTab === 'practice' ? 'active' : ''}`}
-            onClick={() => setActiveSubTab('practice')}
-          >
-            Coding IDE Challenge
-          </div>
+            <span>🤖</span> AI Partner
+          </button>
         </div>
 
         <div style={{ 
@@ -765,8 +869,17 @@ const DayModule = ({ day, user, initialTab, onBack, onUpdatePoints }) => {
                         </div>
                       )}
                       {exerciseStatus === 'fail' && (
-                        <div className="console-log-line error" style={{ fontWeight: 'bold' }}>
-                          ❌ CHALLENGE FAILED. Check console outputs above and try again.
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                          <div className="console-log-line error" style={{ fontWeight: 'bold', margin: 0 }}>
+                            ❌ CHALLENGE FAILED. Check console outputs above and try again.
+                          </div>
+                          <button
+                            className="btn-neon-red glow-button"
+                            onClick={debugWithAi}
+                            style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 14px', marginTop: '5px', cursor: 'pointer' }}
+                          >
+                            <span>🤖</span> Debug with AI
+                          </button>
                         </div>
                       )}
                       {consoleLogs.length === 0 && exerciseStatus === 'idle' && (
@@ -854,6 +967,81 @@ const DayModule = ({ day, user, initialTab, onBack, onUpdatePoints }) => {
           )}
         </div>
       </div>
+
+      {isAiPanelOpen && (
+        <div className="ai-chat-panel" style={{ width: '350px', display: 'flex', flexDirection: 'column', background: '#09090b', borderLeft: '1px solid rgba(255, 255, 255, 0.08)', height: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <h4 style={{ fontSize: '15px', color: 'var(--neon-blue)', margin: 0, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>🤖</span> AI Partner
+            </h4>
+            <button 
+              className="btn-neon-blue"
+              onClick={handleExplainCode}
+              disabled={chatLoading}
+              style={{ padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}
+            >
+              🔍 Explain Code
+            </button>
+          </div>
+          
+          <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            {chatMessages.map((msg, idx) => (
+              <div 
+                key={idx} 
+                style={{ 
+                  alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                  background: msg.sender === 'user' ? 'rgba(0, 210, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                  border: msg.sender === 'user' ? '1px solid rgba(0, 210, 255, 0.2)' : '1px solid rgba(255, 255, 255, 0.05)',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  maxWidth: '85%',
+                  fontSize: '13px',
+                  lineHeight: '1.5',
+                  color: '#fff',
+                  whiteSpace: 'pre-wrap',
+                  textAlign: 'left'
+                }}
+              >
+                {msg.text}
+              </div>
+            ))}
+            {chatLoading && (
+              <div style={{ alignSelf: 'flex-start', color: 'var(--neon-blue)', fontSize: '12px', fontFamily: 'monospace' }}>
+                🤖 Typing...
+              </div>
+            )}
+          </div>
+          
+          <form 
+            onSubmit={handleSendChatMessage}
+            style={{ padding: '15px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', gap: '8px' }}
+          >
+            <input 
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="Ask anything..."
+              style={{
+                flex: 1,
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: '#fff',
+                padding: '8px 12px',
+                borderRadius: '4px',
+                fontSize: '13px',
+                outline: 'none'
+              }}
+            />
+            <button 
+              type="submit"
+              className="btn-neon-blue"
+              style={{ padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}
+            >
+              Send
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

@@ -204,8 +204,52 @@ const QuizArena = () => {
   const [score, setScore] = useState(0);
   const [quizFinished, setQuizFinished] = useState(false);
 
-  const questions = QUIZ_QUESTIONS[selectedDay];
-  const currentQuestion = questions[currentQuestionIdx];
+  const [isAiMode, setIsAiMode] = useState(false);
+  const [aiQuestions, setAiQuestions] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+
+  const startAiQuiz = (dayNum) => {
+    setIsAiMode(true);
+    setAiLoading(true);
+    setAiQuestions([]);
+    setAiError('');
+    setCurrentQuestionIdx(0);
+    setSelectedOption(null);
+    setIsAnswered(false);
+    setScore(0);
+    setQuizFinished(false);
+
+    fetch('http://localhost:5000/api/ai/quiz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ day: dayNum })
+    })
+    .then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to generate AI Quiz');
+      }
+      return data;
+    })
+    .then((data) => {
+      if (data.questions && data.questions.length > 0) {
+        setAiQuestions(data.questions);
+      } else {
+        throw new Error("No questions returned");
+      }
+      setAiLoading(false);
+    })
+    .catch((err) => {
+      console.error(err);
+      setAiError(err.message);
+      setAiLoading(false);
+      setIsAiMode(false);
+    });
+  };
+
+  const questions = isAiMode ? aiQuestions : QUIZ_QUESTIONS[selectedDay];
+  const currentQuestion = questions && questions[currentQuestionIdx];
 
   const handleOptionClick = (idx) => {
     if (isAnswered) return;
@@ -228,6 +272,9 @@ const QuizArena = () => {
 
   const restartQuiz = (dayNum = selectedDay) => {
     setSelectedDay(dayNum);
+    setIsAiMode(false);
+    setAiQuestions([]);
+    setAiError('');
     setCurrentQuestionIdx(0);
     setSelectedOption(null);
     setIsAnswered(false);
@@ -244,24 +291,52 @@ const QuizArena = () => {
         </p>
 
         {/* Day selection tabs */}
-        <div className="quiz-arena-tabs" style={{ display: 'flex', gap: '10px', marginBottom: '30px', borderBottom: '1px solid #222', paddingBottom: '15px' }}>
-          {[1, 2, 3, 4].map(dayNum => (
-            <button
-              key={dayNum}
-              className={selectedDay === dayNum ? 'btn-neon-blue' : 'btn-neon'}
-              onClick={() => restartQuiz(dayNum)}
-              style={{ padding: '8px 16px', fontSize: '13px' }}
-            >
-              Day 0{dayNum} Quiz
-            </button>
-          ))}
+        <div className="quiz-arena-tabs" style={{ display: 'flex', gap: '10px', marginBottom: '30px', borderBottom: '1px solid #222', paddingBottom: '15px', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {[1, 2, 3, 4].map(dayNum => (
+              <button
+                key={dayNum}
+                className={selectedDay === dayNum && !isAiMode ? 'btn-neon-blue' : 'btn-neon'}
+                onClick={() => restartQuiz(dayNum)}
+                style={{ padding: '8px 16px', fontSize: '13px' }}
+              >
+                Day 0{dayNum} Quiz
+              </button>
+            ))}
+          </div>
+          <button 
+            className={`btn-neon-blue ${isAiMode ? 'active' : ''}`}
+            onClick={() => startAiQuiz(selectedDay)}
+            disabled={aiLoading}
+            style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+          >
+            <span>🤖</span> {aiLoading ? 'Generating...' : 'Launch AI Quiz'}
+          </button>
         </div>
 
-        {!quizFinished ? (
+        {aiLoading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '250px', gap: '15px' }}>
+            <span className="spinner" style={{ fontSize: '32px', display: 'inline-block' }}>🌀</span>
+            <p style={{ color: 'var(--neon-blue)', fontFamily: 'monospace', fontSize: '14px' }}>
+              Gemini is creating a custom dynamic quiz for Day 0{selectedDay}...
+            </p>
+          </div>
+        ) : aiError ? (
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <span style={{ fontSize: '48px' }}>❌</span>
+            <h3 style={{ fontSize: '22px', margin: '20px 0 10px 0', color: 'var(--neon-red)' }}>AI Quiz Generation Failed</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '15px', marginBottom: '24px' }}>
+              Make sure you have set your `GEMINI_API_KEY` in the `backend/.env` file.
+            </p>
+            <button className="btn-neon-blue" onClick={() => restartQuiz(selectedDay)}>
+              Return to Static Quiz
+            </button>
+          </div>
+        ) : !quizFinished ? (
           <div>
             {/* Question count */}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '15px', fontFamily: 'monospace' }}>
-              <span>Day {selectedDay} Quiz</span>
+              <span>{isAiMode ? '🤖 AI Generated Quiz' : `Day ${selectedDay} Quiz`}</span>
               <span>Question {currentQuestionIdx + 1} of {questions.length}</span>
             </div>
 
