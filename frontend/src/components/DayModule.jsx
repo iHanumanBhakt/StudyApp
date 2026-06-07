@@ -4,8 +4,7 @@ import MemorySim from './MemorySim';
 import CoercionSim from './CoercionSim';
 import MathSim from './MathSim';
 import { playSpaceSound } from '../utils/audio';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_BASE_URL } from '../config';
 
 const formatChatMessageText = (text) => {
   if (!text) return '';

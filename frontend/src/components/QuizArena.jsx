@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../config';
 
 const QUIZ_QUESTIONS = {
   1: [
@@ -220,7 +221,7 @@ const QuizArena = () => {
     setScore(0);
     setQuizFinished(false);
 
-    fetch('http://localhost:5000/api/ai/quiz', {
+    fetch(`${API_BASE_URL}/api/ai/quiz`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ day: dayNum })

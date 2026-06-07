@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { playSpaceSound } from '../utils/audio';
+import { API_BASE_URL } from '../config';
 
 const BADGE_DESCS = {
   "Sandbox Safe": "Completed Day 1: Understood browser security, stack RAM requirements, and sandbox constraints.",
@@ -149,7 +150,7 @@ const Dashboard = ({ user, onSelectModule }) => {
     setCurrentCardIdx(0);
     setFlashcards([]);
     
-    fetch('http://localhost:5000/api/ai/flashcards', {
+    fetch(`${API_BASE_URL}/api/ai/flashcards`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ day: dayNum })

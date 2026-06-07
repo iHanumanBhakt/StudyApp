@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { playSpaceSound } from '../utils/audio';
+import { API_BASE_URL } from '../config';
 
 const LandingPage = ({ onStart }) => {
   const [facts, setFacts] = useState([]);
@@ -35,7 +36,7 @@ const LandingPage = ({ onStart }) => {
 
   useEffect(() => {
     // Fetch facts from backend
-    fetch('http://localhost:5000/api/facts')
+    fetch(`${API_BASE_URL}/api/facts`)
       .then(res => res.json())
       .then(data => {
         setFacts(data.facts.slice(0, safePositions.length));
