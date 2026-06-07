@@ -7,6 +7,20 @@ import { playSpaceSound } from '../utils/audio';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+const formatChatMessageText = (text) => {
+  if (!text) return '';
+  // Replace single asterisks at the start of lines with a clean bullet point
+  let cleanText = text.replace(/^\s*\*\s+/gm, '• ');
+  // Split by '**' to alternate between normal text and bold text
+  const parts = cleanText.split('**');
+  return parts.map((part, i) => {
+    if (i % 2 === 1) {
+      return <strong key={i} style={{ color: '#fff', fontWeight: 'bold' }}>{part}</strong>;
+    }
+    return part;
+  });
+};
+
 // Expanded day content database: Detailed Theory with Runnable code snippets
 const DAYS_LESSONS = {
   1: {
@@ -909,7 +923,7 @@ const DayModule = ({ day, user, initialTab, onBack, onUpdatePoints }) => {
                             textAlign: 'left'
                           }}
                         >
-                          {aiFeedback}
+                          {formatChatMessageText(aiFeedback)}
                         </div>
                       )}
                       {!aiLoading && !aiFeedback && !aiError && (
@@ -1025,7 +1039,7 @@ const DayModule = ({ day, user, initialTab, onBack, onUpdatePoints }) => {
                   textAlign: 'left'
                 }}
               >
-                {msg.text}
+                {formatChatMessageText(msg.text)}
               </div>
             ))}
             {chatLoading && (
