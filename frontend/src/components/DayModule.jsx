@@ -3,6 +3,7 @@ import V8CompilerSim from './V8CompilerSim';
 import MemorySim from './MemorySim';
 import CoercionSim from './CoercionSim';
 import MathSim from './MathSim';
+import { playSpaceSound } from '../utils/audio';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -152,9 +153,18 @@ const DAYS_LESSONS = {
   }
 };
 
-const DayModule = ({ day, user, onBack, onUpdatePoints }) => {
-  const [activeSubTab, setActiveSubTab] = useState('theory'); // 'theory', 'simulator', 'practice'
-  const [code, setCode] = useState('');
+const DayModule = ({ day, user, initialTab, onBack, onUpdatePoints }) => {
+  const lesson = DAYS_LESSONS[day];
+  const [activeSubTab, setActiveSubTab] = useState(initialTab || 'theory'); // 'theory', 'simulator', 'practice'
+  const [isSandboxMode, setIsSandboxMode] = useState(false);
+  const [savedChallengeCode, setSavedChallengeCode] = useState(lesson?.exercise?.startCode || '');
+  const [code, setCode] = useState(lesson?.exercise?.startCode || '');
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    return typeof window !== 'undefined' ? window.innerWidth * 0.45 : 420;
+  });
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const learnContainerRef = useRef(null);
   const [consoleLogs, setConsoleLogs] = useState([]);
   const [isSuccess, setIsSuccess] = useState(false);
   const [exerciseStatus, setExerciseStatus] = useState('idle'); // 'idle', 'running', 'success', 'fail'
@@ -214,10 +224,53 @@ const DayModule = ({ day, user, onBack, onUpdatePoints }) => {
     };
   }, [isDragging]);
 
-  const lesson = DAYS_LESSONS[day];
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 1024);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleSidebarMouseDown = (e) => {
+    e.preventDefault();
+    setIsResizingSidebar(true);
+  };
+
+  useEffect(() => {
+    if (!isResizingSidebar) return;
+
+    const handleMouseMove = (e) => {
+      if (!learnContainerRef.current) return;
+      const containerRect = learnContainerRef.current.getBoundingClientRect();
+      const newWidth = e.clientX - containerRect.left;
+      
+      // Enforce boundaries (min 300px, max 75% of container width)
+      if (newWidth > 300 && newWidth < containerRect.width * 0.75) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingSidebar(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingSidebar]);
+
+
 
   useEffect(() => {
     setCode(lesson.exercise.startCode);
+    setSavedChallengeCode(lesson.exercise.startCode);
+    setIsSandboxMode(false);
     setConsoleLogs([]);
     setIsSuccess(false);
     setExerciseStatus('idle');
@@ -231,11 +284,15 @@ const DayModule = ({ day, user, onBack, onUpdatePoints }) => {
 
   // Copies a code snippet directly into the IDE and switches sub-tab to practice
   const handleTryInIDE = (snippetCode) => {
+    if (!isSandboxMode) {
+      setSavedChallengeCode(code);
+    }
     setCode(snippetCode);
+    setIsSandboxMode(true);
     setActiveSubTab('practice');
     setConsoleLogs([]);
     setExerciseStatus('idle');
-    setIdeAlert('Snippet copied to editor workspace!');
+    setIdeAlert('Snippet loaded in Sandbox Playground!');
     setTimeout(() => {
       setIdeAlert('');
     }, 3000);
@@ -300,55 +357,60 @@ const DayModule = ({ day, user, onBack, onUpdatePoints }) => {
 
       setConsoleLogs(logs);
 
-      // Validate challenge output
-      const passed = lesson.exercise.validate(logs);
-      if (passed) {
-        setExerciseStatus('success');
-        setIsSuccess(true);
-        
-        // Save score to backend
-        fetch(`${API_BASE_URL}/api/exercises/submit`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: user.username,
-            dayKey: `day${day}`,
-            exerciseIndex: 1,
-            code: code,
-            points: 100
+      // Validate challenge output only if not in sandbox mode
+      if (!isSandboxMode) {
+        const passed = lesson.exercise.validate(logs);
+        if (passed) {
+          setExerciseStatus('success');
+          setIsSuccess(true);
+          
+          // Save score to backend
+          fetch(`${API_BASE_URL}/api/exercises/submit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: user.username,
+              dayKey: `day${day}`,
+              exerciseIndex: 1,
+              code: code,
+              points: 100
+            })
           })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.points !== undefined) {
-            onUpdatePoints(data.points, data.badges, data.completedExercises);
-            if (day === user.currentDay && day < 4) {
-              fetch(`${API_BASE_URL}/api/progress`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  username: user.username,
-                  currentDay: day + 1
-                })
-              });
+          .then(res => res.json())
+          .then(data => {
+            if (data.points !== undefined) {
+              onUpdatePoints(data.points, data.badges, data.completedExercises);
+              if (day === user.currentDay && day <= 4) {
+                fetch(`${API_BASE_URL}/api/progress`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    username: user.username,
+                    currentDay: day + 1
+                  })
+                });
+              }
             }
-          }
-        })
-        .catch(err => {
-          console.error("Backend error submitting exercise:", err);
-          const newPoints = user.points + 100;
-          const nextDay = Math.max(user.currentDay, day === user.currentDay && day < 4 ? day + 1 : user.currentDay);
-          const badgeMap = { 1: "Sandbox Safe", 2: "Memory Master", 3: "Float Fixer", 4: "Loop Legend" };
-          const newBadge = badgeMap[day];
-          const updatedBadges = user.badges.includes(newBadge) ? user.badges : [...user.badges, newBadge];
-          onUpdatePoints(newPoints, updatedBadges, [...user.completedExercises, `day${day}_ex1`]);
-        });
+          })
+          .catch(err => {
+            console.error("Backend error submitting exercise:", err);
+            const newPoints = user.points + 100;
+            const nextDay = Math.max(user.currentDay, day === user.currentDay && day < 4 ? day + 1 : user.currentDay);
+            const badgeMap = { 1: "Sandbox Safe", 2: "Memory Master", 3: "Float Fixer", 4: "Loop Legend" };
+            const newBadge = badgeMap[day];
+            const updatedBadges = user.badges.includes(newBadge) ? user.badges : [...user.badges, newBadge];
+            onUpdatePoints(newPoints, updatedBadges, [...user.completedExercises, `day${day}_ex1`]);
+          });
 
-      } else {
-        setExerciseStatus('fail');
-        if (logs.length === 0) {
-          setConsoleLogs(["[SYSTEM] Code executed successfully, but nothing was output to console.log(). Make sure to log your results!"]);
+        } else {
+          setExerciseStatus('fail');
+          if (logs.length === 0) {
+            setConsoleLogs(["[SYSTEM] Code executed successfully, but nothing was output to console.log(). Make sure to log your results!"]);
+          }
         }
+      } else {
+        // In sandbox mode, simply mark execution complete
+        setExerciseStatus('idle');
       }
     } catch (err) {
       setExerciseStatus('fail');
@@ -367,9 +429,16 @@ const DayModule = ({ day, user, onBack, onUpdatePoints }) => {
   };
 
   return (
-    <div className="learn-container">
+    <div 
+      ref={learnContainerRef}
+      className="learn-container"
+      style={{
+        gridTemplateColumns: isMobile ? '1fr' : `${sidebarWidth}px 4px 1fr`,
+        userSelect: isResizingSidebar ? 'none' : 'auto'
+      }}
+    >
       {/* Left Column: Lesson Content */}
-      <div className="learn-sidebar">
+      <div className="learn-sidebar" style={{ width: '100%', height: '100%', boxSizing: 'border-box' }}>
         <button 
           className="btn-neon" 
           onClick={onBack}
@@ -414,8 +483,73 @@ const DayModule = ({ day, user, onBack, onUpdatePoints }) => {
               )}
             </div>
           ))}
+
+          {/* Direct Challenge Launcher Link */}
+          <div style={{ marginTop: '15px', paddingTop: '20px', borderTop: '1px solid #1c1c1f', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <p style={{ fontSize: '13px', color: '#888', fontStyle: 'italic', margin: 0 }}>
+              Finished reading the core concepts? Start the coding test now.
+            </p>
+            <button
+              className="btn-neon-blue"
+            onClick={() => {
+                playSpaceSound('click');
+                setIsSandboxMode(false);
+                const challengeTargetCode = savedChallengeCode || lesson.exercise.startCode;
+                setCode(challengeTargetCode);
+                setActiveSubTab('practice');
+                
+                // Scroll the workspace / editor into view if on narrow viewports
+                setTimeout(() => {
+                  const contentEl = document.querySelector('.learn-content');
+                  if (contentEl) {
+                    contentEl.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }, 50);
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 20px',
+                fontSize: '13px',
+                fontWeight: '700',
+                borderRadius: '4px',
+                letterSpacing: '1px',
+                boxShadow: '0 0 15px rgba(0, 210, 255, 0.1)'
+              }}
+            >
+              ⚡ Start Coding Challenge →
+            </button>
+          </div>
         </div>
       </div>
+
+      {!isMobile && (
+        <div 
+          className={`sidebar-resizer ${isResizingSidebar ? 'active' : ''}`}
+          onMouseDown={handleSidebarMouseDown}
+          style={{
+            width: '4px',
+            height: '100%',
+            cursor: 'col-resize',
+            background: isResizingSidebar ? 'var(--neon-blue)' : 'rgba(255, 255, 255, 0.08)',
+            boxShadow: isResizingSidebar ? '0 0 10px var(--neon-blue-glow)' : 'none',
+            transition: 'background 0.15s ease, box-shadow 0.15s ease',
+            zIndex: 10,
+            position: 'relative'
+          }}
+          onMouseEnter={(e) => {
+            if (!isResizingSidebar) {
+              e.target.style.background = 'rgba(0, 210, 255, 0.5)';
+              e.target.style.boxShadow = '0 0 8px rgba(0, 210, 255, 0.3)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isResizingSidebar) {
+              e.target.style.background = 'rgba(255, 255, 255, 0.08)';
+              e.target.style.boxShadow = 'none';
+            }
+          }}
+        />
+      )}
 
       {/* Right Column: Dynamic Tabs (Visualizer & Coding Area) */}
       <div className="learn-content">
@@ -479,14 +613,43 @@ const DayModule = ({ day, user, onBack, onUpdatePoints }) => {
               {/* Instructions top pane */}
               <div 
                 ref={instructionsRef}
-                style={{ background: '#0e0e11', padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+                style={{ background: '#0e0e11', padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'relative' }}
               >
-                <h4 style={{ fontSize: '16px', color: '#fff', marginBottom: '6px', textTransform: 'uppercase' }}>
-                  💻 Coding Challenge
-                </h4>
-                <p style={{ fontSize: '15px', color: 'var(--text-secondary)' }}>
-                  {lesson.exercise.desc}
-                </p>
+                {isSandboxMode ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                    <div>
+                      <h4 style={{ fontSize: '15px', color: 'var(--neon-blue)', marginBottom: '4px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>🧪</span> Sandbox Playground
+                      </h4>
+                      <p style={{ fontSize: '13px', color: '#888', margin: 0 }}>
+                        Experimenting with snippet code. Click "Run Code" to execute.
+                      </p>
+                    </div>
+                    <button
+                      className="btn-neon"
+                      onClick={() => {
+                        setIsSandboxMode(false);
+                        setCode(savedChallengeCode);
+                        setConsoleLogs([]);
+                        setExerciseStatus('idle');
+                        setIdeAlert('Returned to challenge workspace');
+                        setTimeout(() => setIdeAlert(''), 2000);
+                      }}
+                      style={{ padding: '6px 12px', fontSize: '12px', borderColor: 'var(--neon-red)', color: 'var(--neon-red)' }}
+                    >
+                      ← Back to Coding Challenge
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <h4 style={{ fontSize: '16px', color: '#fff', marginBottom: '6px', textTransform: 'uppercase' }}>
+                      💻 Coding Challenge
+                    </h4>
+                    <p style={{ fontSize: '15px', color: 'var(--text-secondary)' }}>
+                      {lesson.exercise.desc}
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* Textarea editor area */}
@@ -499,7 +662,13 @@ const DayModule = ({ day, user, onBack, onUpdatePoints }) => {
                 <textarea
                   className="ide-textarea"
                   value={code}
-                  onChange={(e) => setCode(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCode(val);
+                    if (!isSandboxMode) {
+                      setSavedChallengeCode(val);
+                    }
+                  }}
                   placeholder="// Write your code here..."
                   spellCheck="false"
                 />

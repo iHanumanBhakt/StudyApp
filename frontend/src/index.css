@@ -34,8 +34,12 @@
   padding: 0;
 }
 
+html {
+  background-color: #040407;
+}
+
 body {
-  background-color: var(--bg-black);
+  background: transparent;
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 18px; /* Big readable font size by default */
@@ -159,7 +163,7 @@ pre, code {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-black);
+  background-color: transparent;
 }
 
 /* Header */
@@ -714,3 +718,571 @@ pre, code {
     justify-content: center;
   }
 }
+
+/* --- 3D Space Pathways Styling --- */
+
+.pathways-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 35px;
+  perspective: 1000px;
+}
+
+.pathway-card {
+  position: relative;
+  background: rgba(8, 8, 10, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--border-radius);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  height: 340px;
+  cursor: pointer;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease-out;
+  transform-style: preserve-3d;
+  overflow: hidden;
+}
+
+.pathway-card:hover {
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 20px rgba(0, 210, 255, 0.15);
+}
+
+.pathway-card.locked {
+  cursor: not-allowed;
+  border-color: rgba(255, 0, 85, 0.15);
+}
+
+.pathway-card.locked:hover {
+  border-color: rgba(255, 0, 85, 0.4);
+  box-shadow: 0 0 15px rgba(255, 0, 85, 0.1);
+}
+
+/* 3D Translation Offsets for Inner Content */
+.pathway-card-graphic {
+  width: 100px;
+  height: 100px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: translateZ(35px);
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.pathway-card:hover .pathway-card-graphic {
+  transform: translateZ(60px) scale(1.15);
+}
+
+.pathway-card-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #fff;
+  transform: translateZ(25px);
+  transition: transform 0.4s ease;
+}
+
+.pathway-card-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 15px;
+  transform: translateZ(15px);
+  transition: transform 0.4s ease;
+  flex-grow: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pathway-card-status {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transform: translateZ(20px);
+  transition: transform 0.4s ease;
+}
+
+/* Theme accent colors */
+.pathway-card.theme-js {
+  --accent-glow: rgba(0, 210, 255, 0.3);
+  --accent-solid: #00d2ff;
+}
+.pathway-card.theme-backend {
+  --accent-glow: rgba(255, 60, 0, 0.25);
+  --accent-solid: #ff4500;
+}
+.pathway-card.theme-frontend {
+  --accent-glow: rgba(230, 0, 255, 0.25);
+  --accent-solid: #e600ff;
+}
+.pathway-card.theme-sysdesign {
+  --accent-glow: rgba(57, 255, 20, 0.2);
+  --accent-solid: #39ff14;
+}
+.pathway-card.theme-devops {
+  --accent-glow: rgba(110, 0, 255, 0.3);
+  --accent-solid: #6e00ff;
+}
+
+/* Glowing background orbits behind graphic */
+.pathway-bg-glow {
+  position: absolute;
+  top: 40px;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  filter: blur(5px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* HUD System Locked Overlay */
+.hud-scan-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 1, 3, 0.95);
+  border: 2px solid var(--neon-red);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-family: var(--font-mono);
+  color: var(--neon-red);
+  padding: 15px;
+  text-align: center;
+  animation: hudFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+}
+
+.hud-scanline {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--neon-red);
+  box-shadow: 0 0 8px var(--neon-red-glow), 0 0 15px var(--neon-red);
+  animation: scanlineMove 1.5s linear infinite;
+  z-index: 21;
+}
+
+.hud-lock-icon {
+  font-size: 26px;
+  margin-bottom: 10px;
+  animation: pulseLock 1s ease-in-out infinite alternate;
+}
+
+.hud-locked-text {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.hud-requirements {
+  font-size: 11px;
+  color: #a0a0a5;
+  margin-top: 10px;
+  line-height: 1.4;
+}
+
+/* --- SVG Animations --- */
+
+/* Rocket Fire Jet Pulsing */
+.svg-fire {
+  animation: svgFirePulse 0.12s infinite alternate;
+  transform-origin: 30px 48px; /* Anchor of flame on rocket */
+}
+
+/* Slow orbital rotation */
+.svg-orbit-rotate {
+  animation: svgOrbit 35s linear infinite;
+  transform-origin: 50px 50px;
+}
+
+/* Wormhole warp animation */
+.svg-vortex-spin {
+  animation: svgVortex 20s linear infinite;
+  transform-origin: 50px 50px;
+}
+
+/* Floating graphics */
+.svg-float {
+  animation: svgFloatAnim 3s ease-in-out infinite;
+}
+
+/* Solar panel orbital alignment spin */
+.svg-station-rotate {
+  animation: svgOrbit 40s linear infinite;
+  transform-origin: 50px 50px;
+}
+
+@keyframes svgFirePulse {
+  0% { transform: scaleY(0.9) scaleX(0.95); opacity: 0.8; }
+  100% { transform: scaleY(1.35) scaleX(0.9); opacity: 1; filter: drop-shadow(0 0 6px var(--accent-solid)); }
+}
+
+@keyframes svgOrbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes svgVortex {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes svgFloatAnim {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(2deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes hudFadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes scanlineMove {
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
+}
+
+@keyframes pulseLock {
+  from { transform: scale(0.9); filter: drop-shadow(0 0 2px var(--neon-red-glow)); }
+  to { transform: scale(1.15); filter: drop-shadow(0 0 8px var(--neon-red)); }
+}
+
+/* Responsive adjustment for pathways grid */
+@media (max-width: 768px) {
+  .pathways-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  .pathway-card {
+    height: 290px;
+    padding: 20px 15px;
+  }
+  .pathway-card-graphic {
+    height: 80px;
+  }
+}
+
+/* --- Hyperdrive Warp speed Transition --- */
+.warp-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000000;
+  z-index: 99999;
+  pointer-events: all;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.warp-tunnel {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+}
+
+.warp-hud {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 1000;
+  font-family: var(--font-mono);
+  color: var(--neon-blue);
+  pointer-events: none;
+}
+
+.warp-hud-text {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px var(--neon-blue-glow), 0 0 20px var(--neon-blue);
+  margin-bottom: 12px;
+  animation: hudAlertPulse 0.4s infinite alternate;
+}
+
+.warp-hud-dest {
+  font-size: 13px;
+  color: #fff;
+  opacity: 0.7;
+  letter-spacing: 2px;
+}
+
+.star-streak {
+  position: absolute;
+  width: 2px;
+  height: 80px;
+  background: linear-gradient(to bottom, transparent, var(--neon-blue), #ffffff);
+  opacity: 0;
+  transform-origin: center bottom;
+  animation: starWarpAnim 1s cubic-bezier(0.5, 0, 0.5, 1) forwards;
+}
+
+@keyframes starWarpAnim {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0px) scaleY(0.1);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(500px) scaleY(6);
+    opacity: 0;
+  }
+}
+
+@keyframes hudAlertPulse {
+  from { opacity: 0.5; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1.03); }
+}
+
+/* Page fade-in/slide entry animations */
+.anim-fade-in {
+  animation: pageFadeIn 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0px); }
+}
+
+/* Twinkling star animation for landing page */
+.twinkling-star {
+  animation: starTwinkleAnim infinite ease-in-out;
+}
+
+@keyframes starTwinkleAnim {
+  0%, 100% { opacity: 0.15; transform: scale(0.8); }
+  50% { opacity: 0.85; transform: scale(1.3); box-shadow: 0 0 5px #ffffff; }
+}
+
+/* Space Background and Shooting Stars */
+.space-background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(circle at 15% 20%, rgba(110, 0, 255, 0.08) 0%, transparent 50%), radial-gradient(circle at 85% 80%, rgba(0, 210, 255, 0.08) 0%, transparent 50%);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.shooting-star {
+  position: absolute;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 1) 0%, rgba(0, 210, 255, 0.8) 20%, transparent 100%);
+  filter: drop-shadow(0 0 6px var(--neon-blue-glow));
+  opacity: 0;
+  transform-origin: left center;
+  pointer-events: none;
+  animation: shootAnim forwards;
+}
+
+@keyframes shootAnim {
+  0% {
+    transform: rotate(-35deg) translateX(0) scaleX(0.1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(-35deg) translateX(-600px) scaleX(2.2);
+    opacity: 0;
+  }
+}
+
+/* Scenic zoom dolly for parent container */
+.scenic-zoom-in {
+  animation: scenicZoom 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes scenicZoom {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.05); }
+}
+
+/* Scenic card fade and soft scale out */
+.scenic-card-fade-out {
+  opacity: 0 !important;
+  transform: scale(0.96) !important;
+  filter: blur(5px) !important;
+  transition: opacity 1.8s ease-in-out, transform 1.8s ease-in-out, filter 1.8s ease-in-out !important;
+}
+
+/* Soothing diagonal shooting star sweep */
+.scenic-star-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.calming-shooting-star {
+  position: absolute;
+  top: -10%;
+  left: 110%;
+  width: 380px; /* Much longer trail */
+  height: 8px; /* Thicker trail */
+  background: linear-gradient(90deg, rgba(255, 255, 255, 1) 0%, rgba(0, 210, 255, 0.95) 25%, rgba(110, 0, 255, 0.5) 65%, transparent 100%);
+  filter: drop-shadow(0 0 15px rgba(0, 210, 255, 1)) drop-shadow(0 0 30px rgba(0, 210, 255, 0.7)) drop-shadow(0 0 55px rgba(110, 0, 255, 0.4));
+  transform: rotate(-38deg) scaleX(1);
+  transform-origin: left center;
+  opacity: 0;
+  animation: calmingSweep 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* A soft white star head at the tip - bigger and brighter */
+.calming-shooting-star::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 20px #ffffff, 0 0 40px rgba(0, 210, 255, 1), 0 0 70px rgba(0, 210, 255, 0.8);
+}
+
+@keyframes calmingSweep {
+  0% {
+    top: -10%;
+    left: 110%;
+    transform: rotate(-38deg) scaleX(0.1);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: rotate(-38deg) scaleX(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    top: 110%;
+    left: -20%;
+    transform: rotate(-38deg) scaleX(1.4);
+    opacity: 0;
+  }
+}
+
+/* Star sparkles / cosmic dust along the path - bigger and brighter */
+.sparkle-particle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #ffffff, 0 0 16px rgba(0, 210, 255, 0.95);
+  opacity: 0;
+  animation: sparkleFade 1.6s ease-out forwards;
+}
+
+@keyframes sparkleFade {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.95;
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(0.1) translateY(50px);
+    opacity: 0;
+  }
+}
+
+/* Scenic screen fade transition overlay */
+.scenic-screen-flash {
+  position: fixed;
+  inset: 0;
+  background: #03060d; /* Soft dark space color */
+  z-index: 10000;
+  pointer-events: none;
+  opacity: 0;
+  animation: scenicFadeIn 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes scenicFadeIn {
+  0%, 75% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Simulator Tab Buttons */
+.sim-tab-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+.sim-tab-btn:hover {
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.02);
+}
+.sim-tab-btn.active {
+  color: var(--neon-blue);
+  border-color: var(--neon-blue);
+  background: rgba(0, 210, 255, 0.05);
+  box-shadow: 0 0 10px rgba(0, 210, 255, 0.15);
+}
+
+/* Mode Badge Selector */
+.mode-badge {
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.mode-badge.active {
+  background: var(--neon-blue);
+  color: #000;
+  box-shadow: 0 0 8px var(--neon-blue-glow);
+}
+.mode-badge.inactive {
+  background: rgba(255, 255, 255, 0.04);
+  color: #666;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+

@@ -1,31 +1,5 @@
-import React from 'react';
-
-const DAYS_DATA = [
-  {
-    day: 1,
-    title: "The Birth of JS & Browser Sandboxing",
-    desc: "Why Brendan Eich built JS in 10 days, why C++ is a security hazard in browsers, and how sandboxing keeps your computer safe.",
-    topics: ["Netscape War 1995", "C++ System Call Dangers", "Sandboxing & Memory Safety"]
-  },
-  {
-    day: 2,
-    title: "Stack, Heap, Scopes & Data Types",
-    desc: "Understand where JS values are stored in computer memory. Master let, const, var, and the Temporal Dead Zone.",
-    topics: ["Stack vs Heap reference", "var vs let vs const", "Primitive vs Object mutability"]
-  },
-  {
-    day: 3,
-    title: "Operators, Coercion & Floating Inaccuracy",
-    desc: "Deep dive into comparison rules (== vs ===). Learn why 0.1 + 0.2 equals 0.30000000000000004 and how to solve it.",
-    topics: ["Loose vs Strict Equality", "Binary Truncation (IEEE-754)", "Implicit vs Explicit Coercion"]
-  },
-  {
-    day: 4,
-    title: "Control Flow, Loops, Math & Strings",
-    desc: "Write clean decision chains and loops without crashing browsers. Learn the Math.random scaling formula and String immutability.",
-    topics: ["for / while / do-while loops", "Math.random() range shifting", "String index & Immutability"]
-  }
-];
+import React, { useState } from 'react';
+import { playSpaceSound } from '../utils/audio';
 
 const BADGE_DESCS = {
   "Sandbox Safe": "Completed Day 1: Understood browser security, stack RAM requirements, and sandbox constraints.",
@@ -34,7 +8,185 @@ const BADGE_DESCS = {
   "Loop Legend": "Completed Day 4: Programmed custom loops, generated bounded random numbers, and understood string immutability."
 };
 
-const Dashboard = ({ user, onSelectDay }) => {
+const MODULES_DATA = [
+  {
+    id: 'js-foundation',
+    title: 'JS Foundation',
+    desc: 'Master browser sandboxing, stack vs heap memory referencing, coercion trees, floating-point precision, and loops.',
+    status: 'Active Path',
+    theme: 'theme-js',
+    requirements: null,
+    isLocked: false,
+    graphic: (
+      <svg viewBox="0 0 100 100" className="svg-float" style={{ width: '100%', height: '100%' }}>
+        <path d="M 10 90 L 90 90 M 20 90 L 30 70 L 70 70 L 80 90 M 35 70 L 35 50 M 65 70 L 65 50" stroke="#00d2ff" strokeWidth="1.5" fill="none" opacity="0.3"/>
+        <path className="svg-fire" d="M 45 68 L 50 82 L 55 68 Z" fill="#ff7700" opacity="0.9"/>
+        <path className="svg-fire" d="M 47 68 L 50 78 L 53 68 Z" fill="#ffdd00"/>
+        <path d="M 50 20 C 47 35 44 55 42 68 L 58 68 C 56 55 53 35 50 20 Z" fill="#ffffff" stroke="#00d2ff" strokeWidth="1.5"/>
+        <path d="M 42 55 L 30 68 L 42 68 Z M 58 55 L 70 68 L 58 68 Z" fill="#00d2ff" stroke="#00d2ff" strokeWidth="1" opacity="0.8"/>
+        <path d="M 50 20 C 49 25 48 30 47 32 L 53 32 C 52 30 51 25 50 20 Z" fill="#00d2ff"/>
+        <polygon points="49,38 51,38 52,42 48,42" fill="#0c0c0e" stroke="#00d2ff" strokeWidth="0.5"/>
+      </svg>
+    )
+  },
+  {
+    id: 'backend-mastery',
+    title: 'Backend Mastery',
+    desc: 'Construct secure Express REST APIs, build robust routing layers, establish data validation middleware, and log server events.',
+    status: 'Locked',
+    theme: 'theme-backend',
+    requirements: 'Requires: 400 XP & JS Foundation Badges',
+    isLocked: true,
+    graphic: (
+      <svg viewBox="0 0 100 100" className="svg-float" style={{ width: '100%', height: '100%' }}>
+        <circle cx="20" cy="30" r="1.5" fill="#ff4500" opacity="0.4"/>
+        <circle cx="80" cy="20" r="1" fill="#ff4500" opacity="0.6"/>
+        <circle cx="15" cy="70" r="2" fill="#ff4500" opacity="0.3"/>
+        <circle cx="85" cy="75" r="1.5" fill="#ff4500" opacity="0.5"/>
+        <path className="svg-fire" d="M 42 70 L 50 92 L 58 70 Z" fill="#ff3c00"/>
+        <path className="svg-fire" d="M 46 70 L 50 85 L 54 70 Z" fill="#ffb700"/>
+        <rect x="44" y="30" width="12" height="40" rx="6" fill="#ffffff" stroke="#ff4500" strokeWidth="1.5"/>
+        <path d="M 44 32 C 44 20 56 20 56 32 Z" fill="#ff4500"/>
+        <path d="M 40 50 L 44 48 L 44 70 L 40 70 Z" fill="#b0b0b5" stroke="#ff4500" strokeWidth="1"/>
+        <path d="M 60 50 L 56 48 L 56 70 L 60 70 Z" fill="#b0b0b5" stroke="#ff4500" strokeWidth="1"/>
+        <circle cx="50" cy="45" r="3" fill="#050505" stroke="#ff4500" strokeWidth="1"/>
+      </svg>
+    )
+  },
+  {
+    id: 'frontend-mastery',
+    title: 'Frontend Mastery',
+    desc: 'Master React state engines, visual data structures, complex animation curves, drag resize event loops, and fluid CSS grids.',
+    status: 'Locked',
+    theme: 'theme-frontend',
+    requirements: 'Requires: 800 XP & Backend Mastery',
+    isLocked: true,
+    graphic: (
+      <svg viewBox="0 0 100 100" className="svg-float" style={{ width: '100%', height: '100%' }}>
+        <circle cx="50" cy="50" r="38" fill="none" stroke="#e600ff" strokeWidth="1.5" strokeDasharray="3 3"/>
+        <path d="M 20 55 C 20 20 80 20 80 55 C 80 65 72 78 50 78 C 28 78 20 65 20 55 Z" fill="#120c18" stroke="#e600ff" strokeWidth="2"/>
+        <rect x="25" y="35" width="14" height="10" rx="1" fill="none" stroke="#00d2ff" strokeWidth="0.8" opacity="0.7"/>
+        <line x1="28" y1="38" x2="36" y2="38" stroke="#00d2ff" strokeWidth="0.8" opacity="0.7"/>
+        <line x1="28" y1="41" x2="33" y2="41" stroke="#00d2ff" strokeWidth="0.8" opacity="0.7"/>
+        <rect x="61" y="35" width="14" height="12" rx="1" fill="none" stroke="#e600ff" strokeWidth="0.8" opacity="0.7"/>
+        <circle cx="68" cy="41" r="2" fill="none" stroke="#e600ff" strokeWidth="0.8" opacity="0.7"/>
+        <circle cx="50" cy="50" r="14" fill="none" stroke="#e600ff" strokeWidth="1" opacity="0.8"/>
+        <circle cx="50" cy="50" r="18" fill="none" stroke="#00d2ff" strokeWidth="0.5" strokeDasharray="4 2" opacity="0.6"/>
+      </svg>
+    )
+  },
+  {
+    id: 'system-design',
+    title: 'System Design',
+    desc: 'Architect distributed systems, partition database rings, configure horizontal layers, build rate limiters and queues.',
+    status: 'Locked',
+    theme: 'theme-sysdesign',
+    requirements: 'Requires: 1200 XP & Frontend Mastery',
+    isLocked: true,
+    graphic: (
+      <svg viewBox="0 0 100 100" className="svg-float" style={{ width: '100%', height: '100%' }}>
+        <line x1="15" y1="15" x2="35" y2="25" stroke="#39ff14" strokeWidth="0.5" opacity="0.3"/>
+        <line x1="35" y1="25" x2="50" y2="15" stroke="#39ff14" strokeWidth="0.5" opacity="0.3"/>
+        <line x1="50" y1="15" x2="80" y2="30" stroke="#39ff14" strokeWidth="0.5" opacity="0.3"/>
+        <circle cx="15" cy="15" r="1.5" fill="#39ff14" opacity="0.4"/>
+        <circle cx="35" cy="25" r="2" fill="#39ff14" opacity="0.5"/>
+        <circle cx="50" cy="15" r="1.5" fill="#39ff14" opacity="0.4"/>
+        <circle cx="80" cy="30" r="2" fill="#39ff14" opacity="0.6"/>
+        <circle cx="50" cy="50" r="10" fill="#ffffff" stroke="#39ff14" strokeWidth="1.5"/>
+        <g className="svg-station-rotate">
+          <circle cx="50" cy="50" r="26" fill="none" stroke="#39ff14" strokeWidth="1" strokeDasharray="10 5" opacity="0.8"/>
+          <rect x="18" y="47" width="12" height="6" fill="#0c0c0e" stroke="#39ff14" strokeWidth="1"/>
+          <rect x="70" y="47" width="12" height="6" fill="#0c0c0e" stroke="#39ff14" strokeWidth="1"/>
+          <rect x="47" y="18" width="6" height="12" fill="#0c0c0e" stroke="#39ff14" strokeWidth="1"/>
+          <rect x="47" y="70" width="6" height="12" fill="#0c0c0e" stroke="#39ff14" strokeWidth="1"/>
+        </g>
+        <circle cx="50" cy="50" r="35" fill="none" stroke="#39ff14" strokeWidth="0.5" opacity="0.3"/>
+      </svg>
+    )
+  },
+  {
+    id: 'devops-module',
+    title: 'DevOps Academy',
+    desc: 'Assemble CI/CD automation pipelines, package apps with Docker, orchestrate nodes, and manage logging infrastructure.',
+    status: 'Locked',
+    theme: 'theme-devops',
+    requirements: 'Requires: 1600 XP & System Design',
+    isLocked: true,
+    graphic: (
+      <svg viewBox="0 0 100 100" className="svg-float" style={{ width: '100%', height: '100%' }}>
+        <g className="svg-vortex-spin">
+          <path d="M 50 15 C 30 15 15 30 15 50 C 15 70 30 85 50 85 C 70 85 85 70 85 50" stroke="#6e00ff" strokeWidth="1.5" fill="none" strokeDasharray="30 15 10" opacity="0.6"/>
+          <path d="M 50 25 C 36 25 25 36 25 50 C 25 64 36 75 50 75 C 64 75 75 64 75 50" stroke="#00d2ff" strokeWidth="1.2" fill="none" strokeDasharray="20 10 5" opacity="0.8"/>
+          <path d="M 50 35 C 41 35 35 41 35 50 C 35 59 41 65 50 65 C 59 65 65 59 65 50" stroke="#6e00ff" strokeWidth="2" fill="none" strokeDasharray="15 5" opacity="0.9"/>
+        </g>
+        <circle cx="50" cy="50" r="8" fill="#050505" stroke="#6e00ff" strokeWidth="2"/>
+        <g className="svg-orbit-rotate">
+          <g transform="translate(18, 18) rotate(45)">
+            <rect x="-4" y="-3" width="8" height="6" fill="#ffffff" stroke="#6e00ff" strokeWidth="1"/>
+            <line x1="-10" y1="0" x2="10" y2="0" stroke="#00d2ff" strokeWidth="1.2"/>
+            <rect x="-10" y="-2" width="4" height="4" fill="#0c0c0e" stroke="#00d2ff" strokeWidth="0.5"/>
+            <rect x="6" y="-2" width="4" height="4" fill="#0c0c0e" stroke="#00d2ff" strokeWidth="0.5"/>
+            <circle cx="0" cy="5" r="1.5" fill="#6e00ff"/>
+          </g>
+        </g>
+      </svg>
+    )
+  }
+];
+
+const Dashboard = ({ user, onSelectModule }) => {
+  const [scanningCardId, setScanningCardId] = useState(null);
+
+  const getDynamicLockStatus = (moduleId) => {
+    const hasAllJsBadges = ["Sandbox Safe", "Memory Master", "Float Fixer", "Loop Legend"].every(b => user.badges?.includes(b));
+    
+    switch (moduleId) {
+      case 'js-foundation':
+        return false;
+      case 'backend-mastery':
+        return !(user.points >= 400 && hasAllJsBadges);
+      case 'frontend-mastery':
+        return !(user.points >= 800);
+      case 'system-design':
+        return !(user.points >= 1200);
+      case 'devops-module':
+        return !(user.points >= 1600);
+      default:
+        return true;
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((centerY - y) / centerY) * -12;
+    const rotateY = ((x - centerX) / centerX) * 12;
+    
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+  };
+
+  const handleMouseLeave = (e) => {
+    const card = e.currentTarget;
+    card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+  };
+
+  const handleModuleClick = (m) => {
+    const isLocked = getDynamicLockStatus(m.id);
+    if (isLocked) {
+      playSpaceSound('denied');
+      setScanningCardId(m.id);
+      setTimeout(() => {
+        setScanningCardId(null);
+      }, 2500);
+    } else {
+      onSelectModule(m.id);
+    }
+  };
+
   return (
     <div className="dashboard-grid">
       {/* Left panel: Learning path */}
@@ -42,48 +194,53 @@ const Dashboard = ({ user, onSelectDay }) => {
         <div className="glass-card">
           <h2 style={{ fontSize: '32px', marginBottom: '10px' }}>Welcome back, {user.username}!</h2>
           <p style={{ color: 'var(--text-secondary)' }}>
-            Your JavaScript foundation course. Read daily theory, experiment with visual simulators, and solve coding challenges to earn badges.
+            Your space station launchpad. Read theory, experiment with visual 3D flight simulators, and pass missions to unlock advanced cosmic pathways.
           </p>
         </div>
 
         <h3 style={{ fontSize: '22px', borderBottom: '1px solid #222', paddingBottom: '10px', marginTop: '10px' }}>
-          Your Learning Modules
+          Explore Specializations
         </h3>
 
-        <div className="days-section">
-          {DAYS_DATA.map((d) => {
-            const isLocked = d.day > user.currentDay;
+        <div className="pathways-grid">
+          {MODULES_DATA.map((m) => {
+            const isScanning = scanningCardId === m.id;
+            const isLocked = getDynamicLockStatus(m.id);
             return (
-              <div 
-                key={d.day}
-                className={`glass-card day-card ${isLocked ? 'locked' : ''}`}
-                onClick={() => !isLocked && onSelectDay(d.day)}
+              <div
+                key={m.id}
+                className={`pathway-card ${m.theme} ${isLocked ? 'locked' : ''}`}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                onClick={() => handleModuleClick(m)}
               >
-                <div className="day-card-number">0{d.day}</div>
-                <h4 style={{ fontSize: '20px', marginBottom: '8px', color: isLocked ? 'var(--text-secondary)' : '#fff' }}>
-                  Day {d.day}: {d.title}
-                </h4>
-                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '15px', minHeight: '60px' }}>
-                  {d.desc}
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {d.topics.map((t, idx) => (
-                    <span 
-                      key={idx} 
-                      style={{ 
-                        fontSize: '11px', 
-                        padding: '4px 8px', 
-                        background: isLocked ? 'rgba(255,255,255,0.02)' : 'rgba(0, 210, 255, 0.05)', 
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        borderRadius: '4px',
-                        color: isLocked ? '#555' : 'var(--neon-blue)',
-                        fontFamily: 'monospace'
-                      }}
-                    >
-                      {t}
-                    </span>
-                  ))}
+                <div className="pathway-bg-glow"></div>
+                
+                <div className="pathway-card-graphic">
+                  {m.graphic}
                 </div>
+                
+                <div className="pathway-card-title">{m.title}</div>
+                <div className="pathway-card-desc">{m.desc}</div>
+                
+                <div 
+                  className="pathway-card-status" 
+                  style={{
+                    color: isLocked ? 'var(--neon-red)' : 'var(--neon-blue)',
+                    borderColor: isLocked ? 'rgba(255,0,85,0.2)' : 'rgba(0,210,255,0.2)'
+                  }}
+                >
+                  {isLocked ? '🔒 Locked' : '🚀 Open'}
+                </div>
+
+                {isScanning && (
+                  <div className="hud-scan-overlay">
+                    <div className="hud-scanline"></div>
+                    <div className="hud-lock-icon">🔒</div>
+                    <div className="hud-locked-text">Access Denied</div>
+                    <div className="hud-requirements">{m.requirements}</div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -106,11 +263,12 @@ const Dashboard = ({ user, onSelectDay }) => {
             <div>
               <div style={{ fontSize: '13px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Class Progress</div>
               <div style={{ fontSize: '18px', fontWeight: '600' }}>
-                Day {user.currentDay} of 4 unlocked
+                {user.currentDay > 4 || user.completedExercises?.length >= 4 ? "All Days Completed! 🎉" : `Day ${user.currentDay} of 4 unlocked`}
               </div>
             </div>
           </div>
         </div>
+
 
         <div className="glass-card">
           <h3 style={{ fontSize: '20px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '20px' }}>

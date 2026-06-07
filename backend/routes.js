@@ -5,19 +5,17 @@ const router = express.Router();
 
 const FLASH_FACTS = [
   "JavaScript was created in just 10 days in May 1995 by Brendan Eich at Netscape.",
-  "Java and JavaScript are as related as 'Car' and 'Carpet'. The name was pure marketing!",
-  "In 1995, consumer PCs had only 4MB to 8MB of RAM, making heavy language runtimes impossible.",
-  "Running raw C++ in the browser is a massive security hazard. It can read your drive, install malware, or wipe data.",
-  "JavaScript engines run inside a secure 'sandbox' to isolate code execution from the host operating system.",
-  "JavaScript's Garbage Collector automatically frees memory, unlike C++ where manual allocation is required.",
-  "Primitives (string, number) are stored directly in the Stack and passed by value. Objects are stored in the Heap and passed by reference.",
-  "typeof null returns 'object'. This is a famous, 30-year-old bug in the initial JavaScript implementation.",
-  "The 'Temporal Dead Zone' is the state between a block starting and a let/const variable being declared, during which access throws a ReferenceError.",
-  "0.1 + 0.2 !== 0.3 because numbers are stored in binary IEEE-754 format, leading to tiny rounding and accumulation errors.",
-  "The loose equality (==) operator performs implicit type coercion. Always prefer strict equality (===) to avoid bugs.",
-  "In JavaScript, there are 6 falsy values: false, 0, '', null, undefined, and NaN. Everything else is truthy, including empty arrays [] and objects {}.",
-  "Strings in JavaScript are immutable. You cannot change a string in place; every operation returns a brand-new string.",
-  "The formula Math.floor(Math.random() * (max - min + 1)) + min scales, rounds down, and shifts to get inclusive random integers."
+  "CSS stands for Cascading Style Sheets. The 'cascading' refers to the order rules are applied.",
+  "HTTP is stateless. Each request from a client is executed independently without prior context.",
+  "Docker containerizes code, packaging it with all dependencies so it runs identically on any OS.",
+  "Horizontal scaling adds more machines to a pool, while vertical scaling adds power (CPU/RAM) to one server.",
+  "typeof null returns 'object' because of a 30-year-old bug in the initial JavaScript implementation.",
+  "DNS (Domain Name System) acts as the phonebook of the internet, converting domain names to IP addresses.",
+  "The first web page went live in 1991, hosted on a NeXT computer by Tim Berners-Lee at CERN.",
+  "A database index speeds up search queries at the cost of slower writes and additional disk storage.",
+  "0.1 + 0.2 !== 0.3 because numbers are stored in binary IEEE-754 format, leading to rounding inaccuracies.",
+  "Git was created in 2005 by Linus Torvalds, the creator of Linux, to manage Linux kernel development.",
+  "Responsive web design uses media queries to adjust layout styling based on the user's viewport width."
 ];
 
 // Auth Routes

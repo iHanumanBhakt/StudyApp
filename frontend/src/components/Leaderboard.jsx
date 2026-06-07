@@ -77,7 +77,7 @@ const Leaderboard = ({ currentUser }) => {
                   </td>
                   <td>
                     <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>
-                      Day {player.currentDay}
+                      {player.currentDay > 4 || player.completedCount >= 4 ? "Completed 🎉" : `Day ${player.currentDay}`}
                     </span>
                   </td>
                   <td>
